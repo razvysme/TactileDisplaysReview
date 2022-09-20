@@ -1,8 +1,11 @@
 *.pdf
 *.m
 *.png
-
+*.ppxt
+*.DS_Store
 
 Resources/
 Figures/
 Papers/
+
+Experiments.R
