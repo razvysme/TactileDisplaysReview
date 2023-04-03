@@ -7,17 +7,22 @@
 
 library(readxl)
 library(tidyverse)
-library(ggplot2)
+library(ggplot2)#
 library(ggthemes)
 library(ggExtra)
 library(gridExtra)
-library(stringr)
+library(stringr)#
 library(scales)
-library('Cairo') 
+
 library('cowplot') #not in use now
 library(egg)
-setwd("E:/OneDrive - Aalborg Universitet/PhD/Projects/2021 -Vibrotactile displays for music listening - a literature overview/Analysis")
-#setwd("~/OneDrive - Aalborg Universitet/PhD/Projects/2021 -Vibrotactile displays for music listening - a literature overview/Analysis")
+
+switch(Sys.info()[['sysname']],
+       Windows= {library('Cairo') 
+                  setwd("E:/OneDrive - Aalborg Universitet/PhD/Projects/2021 -Vibrotactile displays for music listening - a literature overview/Analysis")},
+       Linux  = {print("I'm a penguin, i don't know what to do.")},
+       Darwin = {setwd("~/OneDrive - Aalborg Universitet/PhD/Projects/2021 -Vibrotactile displays for music listening - a literature overview/Analysis")})
+
 loadTable <- function(showTable)
   {
   rawTable <- read_excel("Paper logs and Table.xlsx", 
@@ -26,9 +31,9 @@ loadTable <- function(showTable)
                                        "text", "text", "text", "text", "text", 
                                        "text", "text", "text", "text", "text", 
                                        "text", "text","skip", "skip", "skip", 
-                                       "skip","skip"),n_max = 71)
+                                       "skip","skip"),n_max = 63)
   Table <- rawTable;
-  Table <- Table[-c(53, 59, 60, 61),] #remove the specified rows
+  #Table <- Table[-c(53, 59, 60, 61),] #remove the specified rows
   
   
   for(i in 1:nrow(Table)){
@@ -56,9 +61,9 @@ loadTable <- function(showTable)
     
   }
   
-  Table[5, "Number_of_Actuators"] <- "0"
-  Table[38, "Number_of_Actuators"] <- "11"
-  Table[51, "Number_of_Actuators"] <- "12"
+  #Table[5, "Number_of_Actuators"] <- "0"
+  #Table[38, "Number_of_Actuators"] <- "11"
+  #Table[51, "Number_of_Actuators"] <- "12"
   
   Table["Wearable"][Table["Wearable"] == "N/A"] <- "No"
   
@@ -84,9 +89,6 @@ Table <- loadTable(0)
 #str(Table) #structure of the data
 
 # qplot(data = Table, Year, Number_of_Actuators, color = Wearable ) #scatter plot
-# 
-# 
-# 
 # #plot nr of actuators over years, and regression line with polynomial interpolation
 # 
 nrOfActuatorsVsYearPlot <- ggplot(Table,aes(Year, Number_of_Actuators)) +
@@ -104,8 +106,34 @@ nrOfActuatorsVsYearPlot <- ggplot(Table,aes(Year, Number_of_Actuators)) +
     #theme(axis.text.y = element_blank(), axis.ticks.y = element_blank(), axis.title.y = element_blank(), plot.margin = unit(c(0, 0, 0, 0), "cm"),
     #text=element_text(colour="white", size = 14),axis.text.x = element_text(colour="grey")) +
     #scale_y_continuous(expand = expansion(mult = c(0, 0)))+
-    geom_smooth(method = "lm" , formula = y ~ poly(x, 3))
+    geom_smooth(method = "lm" , formula = y ~ poly(x, 1))
 nrOfActuatorsVsYearPlot
+
+ggsave(paste("3",".png",sep=""), plot=nrOfActuatorsVsYearPlot, height=100, width=175, scale = 2, units=c("mm"), dpi=300, type = 'cairo')
+
+distribution = Table %>% count(Year)
+distribution %>% na.omit()
+# Subtract the lowest value from all values in the "Year" column
+distribution$Year <- distribution$Year - min(distribution$Year) + 1
+
+nrOfStudiesVsYearPlot <- ggplot(distribution, aes(x = Year, y = n)) +
+  geom_point(size = 2, show.legend = FALSE, alpha = 0.3)+
+  geom_line()+
+  ylab("Number of new devices") +
+  theme_solarized(light = FALSE) + 
+  theme(plot.margin = unit(c(0,0, 0, 0), "cm"), text=element_text(colour="black", size=14), axis.text.x = element_text(colour="black"), axis.text.y = element_text(colour="black"),
+        panel.background = element_rect(fill="white", colour="black",size = 0.5, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.25, linetype = 'dashed',
+                                        colour = "grey"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'dashed',
+                                        colour = "grey"),
+        plot.background = element_rect(fill = "white"))+
+  #scale_y_continuous(labels = scales::percent_format(accuracy = 1L), limits = c(0, 1), breaks = seq(0, 10, by = 0.1), expand = c(0, 0)) + 
+  geom_smooth(method = "lm" , formula = y ~ poly(x, 3), se = TRUE)
+nrOfStudiesVsYearPlot
+
+ggsave(paste("2",".png",sep=""), plot=nrOfStudiesVsYearPlot, height=100, width=175, scale = 2, units=c("mm"), dpi=300, type = 'cairo')
+
 if (1)
 {
   
@@ -307,6 +335,7 @@ if (1)
 # 
 # #ggsave(plot = SignalsVsYear, filename = "SignalsVsYear.pdf")
 }
+
 tempData <- data.frame()
 tempData2 <- data.frame()
 drawGraphs <- function(data, xAxisName, yAxisName, xTargetName, yTargetName, histogram)
@@ -588,9 +617,11 @@ drawGraphs <- function(data, xAxisName, yAxisName, xTargetName, yTargetName, his
 
 # "Year", "Purpose", "Listening_Situation", "Number_of_Actuators", "Actuators_Type", "Signals_Used",
 # "DSP", "Mapping_Scheme", "Body_Area_Actuated", "Wearable", "Evaluation_Measure", "Evaluation_Measure_Detailed",
-# "Evaluation_Population", "Number_of_Participants", "Evaluate on normal hearing users with C/I Simulation", "Provides deffinitions"
+# "Evaluation_Population", "Number_of_Participants", 
+
+#"Evaluate on normal hearing users with C/I Simulation", "Provides deffinitions"
 # " noHist",
 
-df <- drawGraphs(Table, "Mapping_Scheme", "Number_of_Actuators", "Mapping_Scheme", "Number_of_Actuators", TRUE)
-ggsave(paste("Mapping_Scheme"," vs ","Number_of_Actuators",".png",sep=""), plot=df, height=700, width=1000, scale = 3, units=c("px"), dpi=300, type = 'cairo')
+df <- drawGraphs(Table, "Body_Area_Actuated", "Number_of_Actuators", "Body_Area_Actuated", "Number_of_Actuators", TRUE)
+ggsave(paste("12",".png",sep=""), plot=df, height=100, width=175, scale = 2, units=c("mm"), dpi=300, type = 'cairo')
 df
